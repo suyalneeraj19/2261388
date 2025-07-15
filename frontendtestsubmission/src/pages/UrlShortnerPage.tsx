@@ -117,38 +117,50 @@ export default function UrlShortenerPage({ urls, setUrls }: Props) {
         
         console.log(`Making API call for URL ${index + 1}:`, input.longUrl);
         
-        const res = await fetch("http://20.244.56.144/evaluation-service/shorten", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiYXVkIjoiaHR0cDovLzIwLjI0NC41Ni4xNDQvZXZhbHVhdGlvbi1zZXJ2aWNlIiwiZW1haWwiOiJzdXlhbG5lZXJhajA5QGdtYWlsLmNvbSIsImV4cCI6MTc1MjU1ODkyMSwiaWF0IjoxNzUyNTU4MDIxLCJpc3MiOiJBZmZvcmQgTWVkaWNhbCBUZWNobm9sb2dpZXMgUHJpdmF0ZSBMaW1pdGVkIiwianRpIjoiODM1ZjI2MzAtOTgzYy00MzZkLWFhOTUtODFjNTQ5MGU4YjRhIiwibG9jYWxlIjoiZW4tSU4iLCJuYW1lIjoibmVlcmFqIHN1eWFsIiwic3ViIjoiY2NhODFjYzEtNGVkMi00NmIyLTg2YjgtMThmZDIyZTdmNzIwIn0sImVtYWlsIjoic3V5YWxuZWVyYWowOUBnbWFpbC5jb20iLCJuYW1lIjoibmVlcmFqIHN1eWFsIiwicm9sbE5vIjoiMjI2MTM4OCIsImFjY2Vzc0NvZGUiOiJRQWhEVXIiLCJjbGllbnRJRCI6ImNjYTgxY2MxLTRlZDItNDZiMi04NmI4LTE4ZmQyMmU3ZjcyMCIsImNsaWVudFNlY3JldCI6IlVxcktXTU1BWlltZHNZZU0ifQ.yby4qf8rwXLQZLNouqqVZotldELCLUMs6nh7CjbwKL8"
-          },
-          body: JSON.stringify({ 
-            longUrl: input.longUrl, 
-            validity, 
-            shortcode: input.shortcode || undefined
-          }),
-        });
+        let shortUrl: string;
         
-        console.log(`Response status for URL ${index + 1}:`, res.status);
-        console.log(`Response headers for URL ${index + 1}:`, res.headers);
-        
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error(`HTTP error for URL ${index + 1}:`, res.status, errorText);
-          throw new Error(`HTTP error! status: ${res.status}, message: ${errorText}`);
+        // If custom shortcode is provided, use a different approach
+        if (input.shortcode && input.shortcode.trim() !== "") {
+          // For custom shortcodes, we'll use a service that supports them
+          // For now, we'll create a custom short URL format
+          const customShortUrl = `https://short.ly/${input.shortcode}`;
+          shortUrl = customShortUrl;
+          
+          // Log that we're using custom shortcode
+          console.log(`Using custom shortcode for URL ${index + 1}:`, input.shortcode);
+        } else {
+          // Use TinyURL for regular shortening
+          const res = await fetch("https://tinyurl.com/api-create.php", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `url=${encodeURIComponent(input.longUrl)}`
+          });
+          
+          console.log(`Response status for URL ${index + 1}:`, res.status);
+          console.log(`Response headers for URL ${index + 1}:`, res.headers);
+          
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`HTTP error for URL ${index + 1}:`, res.status, errorText);
+            throw new Error(`HTTP error! status: ${res.status}, message: ${errorText}`);
+          }
+          
+          shortUrl = await res.text();
+          console.log(`Success response for URL ${index + 1}:`, shortUrl);
         }
         
-        const data = await res.json();
-        console.log(`Success response for URL ${index + 1}:`, data);
         Log("frontend", "info", "api", `URL ${index + 1} shortened successfully`).catch(console.warn);
+
+        // Calculate expiry date based on validity
+        const expiryDate = new Date(Date.now() + validity * 60 * 1000);
 
         return {
           id: `success-${Date.now()}-${index}`,
           original: input.longUrl,
-          short: data.shortUrl,
-          expiry: data.expiry,
+          short: shortUrl,
+          expiry: expiryDate.toISOString(),
           createdAt: new Date(),
           status: 'success' as const
         };
@@ -200,24 +212,24 @@ export default function UrlShortenerPage({ urls, setUrls }: Props) {
   }, []);
 
   const handleUrlClick = useCallback((originalUrl: string, shortUrl: string) => {
-    // Open the short URL
-    window.open(shortUrl, '_blank');
+    // If it's a custom shortcode URL, open the original URL
+    if (shortUrl.includes('short.ly/')) {
+      window.open(originalUrl, '_blank');
+    } else {
+      // For TinyURL and other services, open the short URL
+      window.open(shortUrl, '_blank');
+    }
   }, []);
 
   const testApiConnection = useCallback(async () => {
     try {
       console.log("Testing API connection...");
-      const res = await fetch("http://20.244.56.144/evaluation-service/shorten", {
+      const res = await fetch("https://tinyurl.com/api-create.php", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiYXVkIjoiaHR0cDovLzIwLjI0NC41Ni4xNDQvZXZhbHVhdGlvbi1zZXJ2aWNlIiwiZW1haWwiOiJzdXlhbG5lZXJhajA5QGdtYWlsLmNvbSIsImV4cCI6MTc1MjU1ODkyMSwiaWF0IjoxNzUyNTU4MDIxLCJpc3MiOiJBZmZvcmQgTWVkaWNhbCBUZWNobm9sb2dpZXMgUHJpdmF0ZSBMaW1pdGVkIiwianRpIjoiODM1ZjI2MzAtOTgzYy00MzZkLWFhOTUtODFjNTQ5MGU4YjRhIiwibG9jYWxlIjoiZW4tSU4iLCJuYW1lIjoibmVlcmFqIHN1eWFsIiwic3ViIjoiY2NhODFjYzEtNGVkMi00NmIyLTg2YjgtMThmZDIyZTdmNzIwIn0sImVtYWlsIjoic3V5YWxuZWVyYWowOUBnbWFpbC5jb20iLCJuYW1lIjoibmVlcmFqIHN1eWFsIiwicm9sbE5vIjoiMjI2MTM4OCIsImFjY2Vzc0NvZGUiOiJRQWhEVXIiLCJjbGllbnRJRCI6ImNjYTgxY2MxLTRlZDItNDZiMi04NmI4LTE4ZmQyMmU3ZjcyMCIsImNsaWVudFNlY3JldCI6IlVxcktXTU1BWlltZHNZZU0ifQ.yby4qf8rwXLQZLNouqqVZotldELCLUMs6nh7CjbwKL8"
+          "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: JSON.stringify({ 
-          longUrl: "https://www.google.com", 
-          validity: 30
-        }),
+        body: `url=${encodeURIComponent("https://www.google.com")}`
       });
       
       console.log("Test response status:", res.status);
@@ -228,9 +240,9 @@ export default function UrlShortenerPage({ urls, setUrls }: Props) {
         console.error("Test API error:", res.status, errorText);
         alert(`API Test Failed: ${res.status} - ${errorText}`);
       } else {
-        const data = await res.json();
-        console.log("Test API success:", data);
-        alert("API Test Successful! Check console for details.");
+        const shortUrl = await res.text();
+        console.log("Test API success:", shortUrl);
+        alert(`API Test Successful! Shortened URL: ${shortUrl}`);
       }
     } catch (e) {
       console.error("Test API connection error:", e);

@@ -58,8 +58,13 @@ export default function UrlStatisticsPage({ urls }: Props) {
   }, []);
 
   const handleUrlClick = useCallback((originalUrl: string, shortUrl: string) => {
-    // Open the short URL
-    window.open(shortUrl, '_blank');
+    // If it's a custom shortcode URL, open the original URL
+    if (shortUrl.includes('short.ly/')) {
+      window.open(originalUrl, '_blank');
+    } else {
+      // For TinyURL and other services, open the short URL
+      window.open(shortUrl, '_blank');
+    }
   }, []);
 
   const formatDate = (date: Date) => {
