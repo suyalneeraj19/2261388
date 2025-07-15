@@ -115,11 +115,14 @@ export default function UrlShortenerPage({ urls, setUrls }: Props) {
       try {
         const validity = input.validity.trim() === "" ? 30 : parseInt(input.validity);
         
+        console.log(`Making API call for URL ${index + 1}:`, input.longUrl);
+        
         const res = await fetch("http://20.244.56.144/evaluation-service/shorten", {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiYXVkIjoiaHR0cDovLzIwLjI0NC41Ni4xNDQvZXZhbHVhdGlvbi1zZXJ2aWNlIiwiZW1haWwiOiJzdXlhbG5lZXJhajA5QGdtYWlsLmNvbSIsImV4cCI6MTc1MjU1ODkyMSwiaWF0IjoxNzUyNTU4MDIxLCJpc3MiOiJBZmZvcmQgTWVkaWNhbCBUZWNobm9sb2dpZXMgUHJpdmF0ZSBMaW1pdGVkIiwianRpIjoiODM1ZjI2MzAtOTgzYy00MzZkLWFhOTUtODFjNTQ5MGU4YjRhIiwibG9jYWxlIjoiZW4tSU4iLCJuYW1lIjoibmVlcmFqIHN1eWFsIiwic3ViIjoiY2NhODFjYzEtNGVkMi00NmIyLTg2YjgtMThmZDIyZTdmNzIwIn0sImVtYWlsIjoic3V5YWxuZWVyYWowOUBnbWFpbC5jb20iLCJuYW1lIjoibmVlcmFqIHN1eWFsIiwicm9sbE5vIjoiMjI2MTM4OCIsImFjY2Vzc0NvZGUiOiJRQWhEVXIiLCJjbGllbnRJRCI6ImNjYTgxY2MxLTRlZDItNDZiMi04NmI4LTE4ZmQyMmU3ZjcyMCIsImNsaWVudFNlY3JldCI6IlVxcktXTU1BWlltZHNZZU0ifQ.yby4qf8rwXLQZLNouqqVZotldELCLUMs6nh7CjbwKL8"
           },
           body: JSON.stringify({ 
             longUrl: input.longUrl, 
@@ -128,11 +131,17 @@ export default function UrlShortenerPage({ urls, setUrls }: Props) {
           }),
         });
         
+        console.log(`Response status for URL ${index + 1}:`, res.status);
+        console.log(`Response headers for URL ${index + 1}:`, res.headers);
+        
         if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+          const errorText = await res.text();
+          console.error(`HTTP error for URL ${index + 1}:`, res.status, errorText);
+          throw new Error(`HTTP error! status: ${res.status}, message: ${errorText}`);
         }
         
         const data = await res.json();
+        console.log(`Success response for URL ${index + 1}:`, data);
         Log("frontend", "info", "api", `URL ${index + 1} shortened successfully`).catch(console.warn);
 
         return {
@@ -144,6 +153,7 @@ export default function UrlShortenerPage({ urls, setUrls }: Props) {
           status: 'success' as const
         };
       } catch (e) {
+        console.error(`Error processing URL ${index + 1}:`, e);
         const errorMessage = e instanceof Error ? e.message : "Failed to shorten URL";
         Log("frontend", "error", "api", `Failed to shorten URL ${index + 1}: ${errorMessage}`).catch(console.warn);
         
@@ -194,6 +204,40 @@ export default function UrlShortenerPage({ urls, setUrls }: Props) {
     window.open(shortUrl, '_blank');
   }, []);
 
+  const testApiConnection = useCallback(async () => {
+    try {
+      console.log("Testing API connection...");
+      const res = await fetch("http://20.244.56.144/evaluation-service/shorten", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiYXVkIjoiaHR0cDovLzIwLjI0NC41Ni4xNDQvZXZhbHVhdGlvbi1zZXJ2aWNlIiwiZW1haWwiOiJzdXlhbG5lZXJhajA5QGdtYWlsLmNvbSIsImV4cCI6MTc1MjU1ODkyMSwiaWF0IjoxNzUyNTU4MDIxLCJpc3MiOiJBZmZvcmQgTWVkaWNhbCBUZWNobm9sb2dpZXMgUHJpdmF0ZSBMaW1pdGVkIiwianRpIjoiODM1ZjI2MzAtOTgzYy00MzZkLWFhOTUtODFjNTQ5MGU4YjRhIiwibG9jYWxlIjoiZW4tSU4iLCJuYW1lIjoibmVlcmFqIHN1eWFsIiwic3ViIjoiY2NhODFjYzEtNGVkMi00NmIyLTg2YjgtMThmZDIyZTdmNzIwIn0sImVtYWlsIjoic3V5YWxuZWVyYWowOUBnbWFpbC5jb20iLCJuYW1lIjoibmVlcmFqIHN1eWFsIiwicm9sbE5vIjoiMjI2MTM4OCIsImFjY2Vzc0NvZGUiOiJRQWhEVXIiLCJjbGllbnRJRCI6ImNjYTgxY2MxLTRlZDItNDZiMi04NmI4LTE4ZmQyMmU3ZjcyMCIsImNsaWVudFNlY3JldCI6IlVxcktXTU1BWlltZHNZZU0ifQ.yby4qf8rwXLQZLNouqqVZotldELCLUMs6nh7CjbwKL8"
+        },
+        body: JSON.stringify({ 
+          longUrl: "https://www.google.com", 
+          validity: 30
+        }),
+      });
+      
+      console.log("Test response status:", res.status);
+      console.log("Test response headers:", res.headers);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Test API error:", res.status, errorText);
+        alert(`API Test Failed: ${res.status} - ${errorText}`);
+      } else {
+        const data = await res.json();
+        console.log("Test API success:", data);
+        alert("API Test Successful! Check console for details.");
+      }
+    } catch (e) {
+      console.error("Test API connection error:", e);
+      alert(`API Test Error: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    }
+  }, []);
+
   const sortedUrls = useMemo(() => {
     return [...urls].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }, [urls]);
@@ -205,11 +249,16 @@ export default function UrlShortenerPage({ urls, setUrls }: Props) {
       <div className="url-inputs-container">
         <div className="url-inputs-header">
           <h2>Enter URLs to Shorten (Up to 5)</h2>
-          {urlInputs.length < 5 && (
-            <button onClick={addUrlInput} className="add-url-btn">
-              + Add Another URL
+          <div className="header-buttons">
+            {urlInputs.length < 5 && (
+              <button onClick={addUrlInput} className="add-url-btn">
+                + Add Another URL
+              </button>
+            )}
+            <button onClick={testApiConnection} className="test-api-btn">
+              Test API Connection
             </button>
-          )}
+          </div>
         </div>
         
         {urlInputs.map((input, index) => (

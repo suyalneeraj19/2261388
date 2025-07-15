@@ -211,6 +211,12 @@
   margin-bottom: 20px;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .url-inputs-header h2 {
   margin: 0;
   color: #333;
@@ -229,6 +235,21 @@
 
 .add-url-btn:hover {
   background: #218838;
+}
+
+.test-api-btn {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.test-api-btn:hover {
+  background: #138496;
 }
 
 .url-input-group {
