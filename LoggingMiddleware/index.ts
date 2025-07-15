@@ -12,7 +12,7 @@ export async function Log(
         body : JSON.stringify({
             stack,
             level,
-            package : pkg,message
+            package : pkg , message
         }),
     });
 }
