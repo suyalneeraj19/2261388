@@ -6,9 +6,10 @@ export async function Log(
 ) {
     await fetch("http://20.244.56.144/evaluation-service/logs", {
         method : "POST",
-        headers : {
-            "Content-Type" : "application/json",
-        },
+         headers : {
+                "Content-Type" : "application/json",
+                "Authorization" : "Bearer " + process.env.REACT_APP_ACCESS_TOKEN,
+            },
         body : JSON.stringify({
             stack,
             level,
